@@ -19,19 +19,22 @@ class OwnerSerializer(serializers.ModelSerializer):
 
 
 class CatSerializer(serializers.ModelSerializer):
-    achievements = AchievementSerializer(many=True)
+    achievements = AchievementSerializer(many=True, required=False)
 
     class Meta:
         model = Cat
         fields = ('id', 'name', 'color', 'birth_year', 'owner', 'achievements')
 
     def create(self, validated_data):
+        cat = Cat.objects.create(**validated_data)
+        # Если в исходном запросе не было поля achievements
+        if 'achievements' not in self.initial_data:
+            # То создаём запись о котике без его достижений
+            return cat
+
         # Уберем список достижений из словаря validated_data и сохраним его
         achievements = validated_data.pop('achievements')
-
         # Создадим нового котика пока без достижений, данных нам достаточно
-        cat = Cat.objects.create(**validated_data)
-
         # Для каждого достижения из списка достижений
         for achievement in achievements:
             # Создадим новую запись или получим существующий экземпляр из БД
